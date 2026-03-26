@@ -1,6 +1,6 @@
 import re
 
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -149,3 +149,27 @@ class VendorSignupSerializer(serializers.Serializer):
 
         send_registration_email(user, "vendor")
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        password = attrs["password"]
+
+        try:
+            user = AuthUser.objects.get(username=email)
+        except AuthUser.DoesNotExist:
+            raise serializers.ValidationError(ERROR_MESSAGES["invalid_credentials"])
+
+        if int(user.is_active) != 1:
+            raise serializers.ValidationError(ERROR_MESSAGES["inactive_user"])
+
+        if not check_password(password, user.password):
+            raise serializers.ValidationError(ERROR_MESSAGES["invalid_credentials"])
+
+        attrs["email"] = email
+        attrs["user"] = user
+        return attrs

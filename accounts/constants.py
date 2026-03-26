@@ -10,3 +10,8 @@ SUCCESS_MESSAGES = {
     "admin_signup": "Admin signup successful",
     "vendor_signup": "Vendor signup successful",
 }
+
+EMAIL_SUBJECTS = {
+    "admin_signup": "Admin Registration Successful",
+    "vendor_signup": "Vendor Registration Successful",
+}

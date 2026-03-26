@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .constants import ERROR_MESSAGES
+from .utils import send_registration_email
 from rfp.models import AccountsUserprofile, AuthUser, RfpCategory
 
 
@@ -53,6 +54,7 @@ class AdminSignupSerializer(serializers.Serializer):
             status="active",
         )
 
+        send_registration_email(user, "admin")
         return user
 
 
@@ -145,4 +147,5 @@ class VendorSignupSerializer(serializers.Serializer):
             status="pending",
         )
 
+        send_registration_email(user, "vendor")
         return user

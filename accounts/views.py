@@ -6,7 +6,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .constants import ERROR_MESSAGES, SUCCESS_MESSAGES
-from .serializers import AdminSignupSerializer, LoginSerializer, VendorSignupSerializer
+from .serializers import (
+    AdminSignupSerializer,
+    LoginSerializer,
+    VendorListSerializer,
+    VendorSignupSerializer,
+)
+from rfpBackend.permissions import IsAdminRole
 from rfp.models import AccountsUserprofile
 
 
@@ -102,4 +108,88 @@ class LoginView(APIView):
                 "errors": serializer.errors,
             },
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class VendorListView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def get(self, request):
+        vendors = AccountsUserprofile.objects.filter(
+            role="vendor",
+        ).select_related("user").order_by("-created_at")
+
+        serializer = VendorListSerializer(vendors, many=True)
+
+        return Response(
+            {
+                "success": True,
+                "message": SUCCESS_MESSAGES["vendors"],
+                "data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ApproveVendorView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def post(self, request, user_id):
+        vendor = AccountsUserprofile.objects.filter(
+            user_id=user_id,
+            role="vendor",
+        ).first()
+
+        if not vendor:
+            return Response(
+                {
+                    "success": False,
+                    "message": ERROR_MESSAGES["vendor_not_found"],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        vendor.is_vendor_approved = 1
+        vendor.status = "active"
+        vendor.updated_at = timezone.now()
+        vendor.save(update_fields=["is_vendor_approved", "status", "updated_at"])
+
+        return Response(
+            {
+                "success": True,
+                "message": SUCCESS_MESSAGES["vendor_approved"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DisapproveVendorView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def post(self, request, user_id):
+        vendor = AccountsUserprofile.objects.filter(
+            user_id=user_id,
+            role="vendor",
+        ).first()
+
+        if not vendor:
+            return Response(
+                {
+                    "success": False,
+                    "message": ERROR_MESSAGES["vendor_not_found"],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        vendor.is_vendor_approved = 0
+        vendor.status = "disapproved"
+        vendor.updated_at = timezone.now()
+        vendor.save(update_fields=["is_vendor_approved", "status", "updated_at"])
+
+        return Response(
+            {
+                "success": True,
+                "message": SUCCESS_MESSAGES["vendor_disapproved"],
+            },
+            status=status.HTTP_200_OK,
         )

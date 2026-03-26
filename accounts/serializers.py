@@ -173,3 +173,18 @@ class LoginSerializer(serializers.Serializer):
         attrs["email"] = email
         attrs["user"] = user
         return attrs
+
+
+class VendorListSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(source="user.id")
+    name = serializers.SerializerMethodField()
+    email = serializers.EmailField(source="user.email")
+    mobile = serializers.CharField(source="phone")
+    no_of_employees = serializers.CharField()
+    status = serializers.CharField()
+    categories = serializers.CharField(source="category")
+
+    def get_name(self, obj):
+        first_name = (obj.user.first_name or "").strip()
+        last_name = (obj.user.last_name or "").strip()
+        return f"{first_name} {last_name}".strip()

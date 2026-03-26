@@ -7,12 +7,16 @@ ERROR_MESSAGES = {
     "invalid_credentials": "Invalid email or password",
     "inactive_user": "User account is inactive",
     "token_user_not_found": "Token user could not be created",
+    "vendor_not_found": "Vendor not found",
 }
 
 SUCCESS_MESSAGES = {
     "admin_signup": "Admin signup successful",
     "vendor_signup": "Vendor signup successful",
     "login": "Login successful",
+    "vendors": "Vendors fetched successfully",
+    "vendor_approved": "Vendor approved successfully",
+    "vendor_disapproved": "Vendor disapproved successfully",
 }
 
 EMAIL_SUBJECTS = {

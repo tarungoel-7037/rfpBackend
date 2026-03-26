@@ -155,7 +155,7 @@ class DjangoSession(models.Model):
 
 
 class RfpCategory(models.Model):
-    id = models.CharField(primary_key=True, max_length=32)
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField()

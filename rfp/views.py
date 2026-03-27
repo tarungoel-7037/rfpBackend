@@ -2,10 +2,10 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from rfpBackend.permissions import IsAdminRole
+from rfpBackend.permissions import IsAdminRole, IsVendorRole
 
 from .constants import RFP_MESSAGES
-from .models import AccountsUserprofile, RfpRfp
+from .models import AccountsUserprofile, RfpRfp, RfpRfpVendors
 from .serializers import CreateRfpSerializer, RfpListSerializer, VendorByCategorySerializer
 
 
@@ -119,6 +119,25 @@ class CloseRfpView(APIView):
             {
                 "response": "success",
                 "quotes": RFP_MESSAGES["closed"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class VendorRfpListView(APIView):
+    permission_classes = [IsVendorRole]
+
+    def get(self, request, vendor_id):
+        selected_rfp_ids = RfpRfpVendors.objects.filter(
+            user_id=vendor_id
+        ).values_list("rfp_id", flat=True)
+
+        rfps = RfpRfp.objects.filter(id__in=selected_rfp_ids).order_by("-id")
+        serializer = RfpListSerializer(rfps, many=True)
+        return Response(
+            {
+                "response": "success",
+                "rfps": serializer.data,
             },
             status=status.HTTP_200_OK,
         )

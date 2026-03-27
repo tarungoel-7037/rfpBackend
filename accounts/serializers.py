@@ -10,11 +10,11 @@ from rfp.models import AccountsUserprofile, AuthUser, RfpCategory
 
 
 class AdminSignupSerializer(serializers.Serializer):
-    first_name = serializers.CharField(max_length=150)
-    last_name = serializers.CharField(max_length=150)
+    firstname = serializers.CharField(max_length=150)
+    lastname = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    phone = serializers.CharField(max_length=20)
+    mobile = serializers.CharField(max_length=20)
 
     def validate_email(self, value):
         email = value.strip().lower()
@@ -27,8 +27,8 @@ class AdminSignupSerializer(serializers.Serializer):
 
         user = AuthUser.objects.create(
             username=validated_data["email"],
-            first_name=validated_data["first_name"].strip(),
-            last_name=validated_data["last_name"].strip(),
+            first_name=validated_data["firstname"].strip(),
+            last_name=validated_data["lastname"].strip(),
             email=validated_data["email"],
             password=make_password(validated_data["password"]),
             is_superuser=0,
@@ -41,7 +41,7 @@ class AdminSignupSerializer(serializers.Serializer):
         AccountsUserprofile.objects.create(
             user=user,
             role="admin",
-            phone=validated_data["phone"].strip(),
+            phone=validated_data["mobile"].strip(),
             company_name=None,
             is_vendor_approved=1,
             created_at=now,
@@ -59,35 +59,22 @@ class AdminSignupSerializer(serializers.Serializer):
 
 
 class VendorSignupSerializer(serializers.Serializer):
-    first_name = serializers.CharField(max_length=150)
-    last_name = serializers.CharField(max_length=150)
+    firstname = serializers.CharField(max_length=150)
+    lastname = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    confirm_password = serializers.CharField(write_only=True)
-    phone = serializers.CharField(max_length=20)
+    mobile = serializers.CharField(max_length=20)
     revenue = serializers.CharField(max_length=255)
     no_of_employees = serializers.CharField(max_length=10)
     gst_no = serializers.CharField(max_length=20)
-    pan_no = serializers.CharField(max_length=20)
-    category = serializers.CharField(max_length=10)
+    pancard_no = serializers.CharField(max_length=20)
+    category = serializers.CharField()
 
     def validate_email(self, value):
         email = value.strip().lower()
         if AuthUser.objects.filter(username=email).exists():
             raise serializers.ValidationError(ERROR_MESSAGES["user_exists"])
         return email
-
-    def validate_category(self, value):
-        category = value.strip()
-        category_exists = (
-            RfpCategory.objects.filter(id=category).exists()
-            or RfpCategory.objects.filter(name=category).exists()
-        )
-
-        if not category_exists:
-            raise serializers.ValidationError(ERROR_MESSAGES["invalid_category"])
-
-        return category
 
     def validate_gst_no(self, value):
         gst_no = value.strip().upper()
@@ -98,7 +85,7 @@ class VendorSignupSerializer(serializers.Serializer):
 
         return gst_no
 
-    def validate_pan_no(self, value):
+    def validate_pancard_no(self, value):
         pan_no = value.strip().upper()
         pan_pattern = r"^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
 
@@ -107,21 +94,13 @@ class VendorSignupSerializer(serializers.Serializer):
 
         return pan_no
 
-    def validate(self, attrs):
-        if attrs["password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError(
-                {"confirm_password": ERROR_MESSAGES["password_mismatch"]}
-            )
-        return attrs
-
     def create(self, validated_data):
         now = timezone.now()
-        validated_data.pop("confirm_password")
 
         user = AuthUser.objects.create(
             username=validated_data["email"],
-            first_name=validated_data["first_name"].strip(),
-            last_name=validated_data["last_name"].strip(),
+            first_name=validated_data["firstname"].strip(),
+            last_name=validated_data["lastname"].strip(),
             email=validated_data["email"],
             password=make_password(validated_data["password"]),
             is_superuser=0,
@@ -134,7 +113,7 @@ class VendorSignupSerializer(serializers.Serializer):
         AccountsUserprofile.objects.create(
             user=user,
             role="vendor",
-            phone=validated_data["phone"].strip(),
+            phone=validated_data["mobile"].strip(),
             company_name=None,
             is_vendor_approved=0,
             created_at=now,
@@ -142,7 +121,7 @@ class VendorSignupSerializer(serializers.Serializer):
             category=validated_data["category"],
             gst_no=validated_data["gst_no"].strip(),
             no_of_employees=validated_data["no_of_employees"].strip(),
-            pancard_no=validated_data["pan_no"].strip(),
+            pancard_no=validated_data["pancard_no"].strip(),
             revenue=validated_data["revenue"].strip(),
             status="pending",
         )
@@ -181,10 +160,22 @@ class VendorListSerializer(serializers.Serializer):
     email = serializers.EmailField(source="user.email")
     mobile = serializers.CharField(source="phone")
     no_of_employees = serializers.CharField()
-    status = serializers.CharField()
+    status = serializers.SerializerMethodField()
     categories = serializers.CharField(source="category")
 
     def get_name(self, obj):
         first_name = (obj.user.first_name or "").strip()
         last_name = (obj.user.last_name or "").strip()
         return f"{first_name} {last_name}".strip()
+
+    def get_status(self, obj):
+        status_value = (obj.status or "").strip().lower()
+
+        if status_value == "active":
+            return "Approved"
+        if status_value == "disapproved":
+            return "Disapproved"
+        if status_value == "pending":
+            return "Pending"
+
+        return obj.status

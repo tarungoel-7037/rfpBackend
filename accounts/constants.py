@@ -8,6 +8,10 @@ ERROR_MESSAGES = {
     "inactive_user": "User account is inactive",
     "token_user_not_found": "Token user could not be created",
     "vendor_not_found": "Vendor not found",
+    "approve_payload_required": "user_id and status are required",
+    "invalid_vendor_status": "Status should be approved or pending",
+    "already_approved": "Already Approved",
+    "already_pending": "Already Pending",
 }
 
 SUCCESS_MESSAGES = {
@@ -15,8 +19,8 @@ SUCCESS_MESSAGES = {
     "vendor_signup": "Vendor signup successful",
     "login": "Login successful",
     "vendors": "Vendors fetched successfully",
-    "vendor_approved": "Vendor approved successfully",
-    "vendor_disapproved": "Vendor disapproved successfully",
+    "vendor_approved": "Vendor Approved Successfully",
+    "vendor_disapproved": "Vendor Moved To Pending Successfully",
 }
 
 EMAIL_SUBJECTS = {

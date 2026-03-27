@@ -10,6 +10,18 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "description", "created_at", "status"]
         read_only_fields = ["id", "description", "created_at", "status"]
 
+    def validate_name(self, value):
+        name = value.strip()
+        queryset = RfpCategory.objects.filter(name__iexact=name)
+
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError("Category already exist")
+
+        return name
+
     def create(self, validated_data):
         validated_data["description"] = None
         validated_data["created_at"] = timezone.now()

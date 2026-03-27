@@ -17,11 +17,27 @@ class CategoryListCreateView(APIView):
 
     def get(self, request):
         categories = RfpCategory.objects.all().order_by("name")
-        serializer = CategorySerializer(categories, many=True)
+        category_data = {}
+
+        for category in categories:
+            status_value = (category.status or "").strip().lower()
+            if status_value == "active":
+                formatted_status = "Active"
+            elif status_value == "inactive":
+                formatted_status = "Inactive"
+            else:
+                formatted_status = category.status
+
+            category_data[str(category.id)] = {
+                "id": category.id,
+                "name": category.name,
+                "status": formatted_status,
+            }
+
         return Response(
             {
-                "success": True,
-                "data": serializer.data,
+                "response": "success",
+                "categories": category_data,
             },
             status=status.HTTP_200_OK,
         )
@@ -31,19 +47,16 @@ class CategoryListCreateView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(
-                {
-                    "success": True,
-                    "message": CATEGORY_MESSAGES["created"],
-                    "data": serializer.data,
-                },
+                {"response": "success"},
                 status=status.HTTP_201_CREATED,
             )
 
+        error_message = CATEGORY_MESSAGES["already_exists"]
+        if "name" in serializer.errors and serializer.errors["name"]:
+            error_message = serializer.errors["name"][0]
+
         return Response(
-            {
-                "success": False,
-                "errors": serializer.errors,
-            },
+            {"response": "error", "error": error_message},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

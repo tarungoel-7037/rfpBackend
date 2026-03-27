@@ -20,13 +20,9 @@ class AdminSignupView(APIView):
     def post(self, request):
         serializer = AdminSignupSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response(
-                {
-                    "success": True,
-                    "message": SUCCESS_MESSAGES["admin_signup"],
-                    "user_id": user.id,
-                },
+                {"response": "success"},
                 status=status.HTTP_201_CREATED,
             )
 
@@ -43,13 +39,9 @@ class VendorSignupView(APIView):
     def post(self, request):
         serializer = VendorSignupSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response(
-                {
-                    "success": True,
-                    "message": SUCCESS_MESSAGES["vendor_signup"],
-                    "user_id": user.id,
-                },
+                {"response": "success"},
                 status=status.HTTP_201_CREATED,
             )
 
@@ -89,23 +81,20 @@ class LoginView(APIView):
 
             return Response(
                 {
-                    "success": True,
-                    "message": SUCCESS_MESSAGES["login"],
+                    "response": "success",
                     "user_id": user.id,
+                    "type": profile.role if profile else None,
+                    "name": f"{user.first_name} {user.last_name}".strip(),
                     "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": profile.role if profile else None,
-                    "status": profile.status if profile else None,
-                    "access_token": access_token,
+                    "token": access_token,
                 },
                 status=status.HTTP_200_OK,
             )
 
         return Response(
             {
-                "success": False,
-                "errors": serializer.errors,
+                "response": "error",
+                "error": "Invalid credential",
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -123,9 +112,8 @@ class VendorListView(APIView):
 
         return Response(
             {
-                "success": True,
-                "message": SUCCESS_MESSAGES["vendors"],
-                "data": serializer.data,
+                "response": "success",
+                "vendors": serializer.data,
             },
             status=status.HTTP_200_OK,
         )
@@ -134,7 +122,28 @@ class VendorListView(APIView):
 class ApproveVendorView(APIView):
     permission_classes = [IsAdminRole]
 
-    def post(self, request, user_id):
+    def post(self, request):
+        user_id = request.data.get("user_id")
+        status_value = str(request.data.get("status", "")).strip().lower()
+
+        if not user_id or not status_value:
+            return Response(
+                {
+                    "response": "Error",
+                    "message": ERROR_MESSAGES["approve_payload_required"],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if status_value not in ["approved", "pending"]:
+            return Response(
+                {
+                    "response": "Error",
+                    "message": ERROR_MESSAGES["invalid_vendor_status"],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         vendor = AccountsUserprofile.objects.filter(
             user_id=user_id,
             role="vendor",
@@ -143,53 +152,46 @@ class ApproveVendorView(APIView):
         if not vendor:
             return Response(
                 {
-                    "success": False,
+                    "response": "Error",
                     "message": ERROR_MESSAGES["vendor_not_found"],
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        vendor.is_vendor_approved = 1
-        vendor.status = "active"
+        if status_value == "approved":
+            if int(vendor.is_vendor_approved) == 1 and (vendor.status or "").strip().lower() == "active":
+                return Response(
+                    {
+                        "response": "Error",
+                        "message": ERROR_MESSAGES["already_approved"],
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            vendor.is_vendor_approved = 1
+            vendor.status = "active"
+            success_message = SUCCESS_MESSAGES["vendor_approved"]
+        else:
+            if int(vendor.is_vendor_approved) == 0 and (vendor.status or "").strip().lower() == "pending":
+                return Response(
+                    {
+                        "response": "Error",
+                        "message": ERROR_MESSAGES["already_pending"],
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            vendor.is_vendor_approved = 0
+            vendor.status = "pending"
+            success_message = SUCCESS_MESSAGES["vendor_disapproved"]
+
         vendor.updated_at = timezone.now()
         vendor.save(update_fields=["is_vendor_approved", "status", "updated_at"])
 
         return Response(
             {
-                "success": True,
-                "message": SUCCESS_MESSAGES["vendor_approved"],
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class DisapproveVendorView(APIView):
-    permission_classes = [IsAdminRole]
-
-    def post(self, request, user_id):
-        vendor = AccountsUserprofile.objects.filter(
-            user_id=user_id,
-            role="vendor",
-        ).first()
-
-        if not vendor:
-            return Response(
-                {
-                    "success": False,
-                    "message": ERROR_MESSAGES["vendor_not_found"],
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        vendor.is_vendor_approved = 0
-        vendor.status = "disapproved"
-        vendor.updated_at = timezone.now()
-        vendor.save(update_fields=["is_vendor_approved", "status", "updated_at"])
-
-        return Response(
-            {
-                "success": True,
-                "message": SUCCESS_MESSAGES["vendor_disapproved"],
+                "response": "success",
+                "message": success_message,
             },
             status=status.HTTP_200_OK,
         )

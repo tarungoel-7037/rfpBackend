@@ -86,3 +86,39 @@ class RfpListView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class CloseRfpView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def get(self, request, rfp_id):
+        rfp = RfpRfp.objects.filter(id=rfp_id).first()
+        if not rfp:
+            return Response(
+                {
+                    "response": "error",
+                    "message": RFP_MESSAGES["not_found"],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        current_status = (rfp.status or "").strip().lower()
+        if current_status == "closed":
+            return Response(
+                {
+                    "response": "error",
+                    "message": RFP_MESSAGES["already_closed"],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rfp.status = "closed"
+        rfp.save(update_fields=["status"])
+
+        return Response(
+            {
+                "response": "success",
+                "quotes": RFP_MESSAGES["closed"],
+            },
+            status=status.HTTP_200_OK,
+        )

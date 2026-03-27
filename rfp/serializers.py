@@ -55,6 +55,66 @@ class RfpListSerializer(serializers.Serializer):
         return status_value or obj.status
 
 
+class VendorRfpListSerializer(serializers.Serializer):
+    rfp_id = serializers.IntegerField(source="id")
+    admin_id = serializers.IntegerField(source="created_by_id")
+    item_name = serializers.CharField()
+    item_description = serializers.CharField()
+    rfp_no = serializers.CharField()
+    quantity = serializers.SerializerMethodField()
+    last_date = serializers.SerializerMethodField()
+    minimum_price = serializers.SerializerMethodField()
+    maximum_price = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(allow_null=True)
+    updated_at = serializers.DateTimeField(allow_null=True)
+    vendor_id = serializers.SerializerMethodField()
+    item_price = serializers.SerializerMethodField()
+    total_cost = serializers.SerializerMethodField()
+    rfp_status = serializers.SerializerMethodField()
+    applied_status = serializers.SerializerMethodField()
+
+    def _get_quote(self, obj):
+        quote_map = self.context.get("quote_map", {})
+        return quote_map.get(obj.id)
+
+    def get_quantity(self, obj):
+        quantity = obj.quantity
+        return int(quantity) if str(quantity).isdigit() else quantity
+
+    def get_last_date(self, obj):
+        return obj.last_date.date().isoformat() if obj.last_date else None
+
+    def get_minimum_price(self, obj):
+        return int(obj.minimum_price) if obj.minimum_price is not None else None
+
+    def get_maximum_price(self, obj):
+        return int(obj.maximum_price) if obj.maximum_price is not None else None
+
+    def get_categories(self, obj):
+        return str(obj.category_id) if obj.category_id else None
+
+    def get_vendor_id(self, obj):
+        return self.context.get("vendor_id")
+
+    def get_item_price(self, obj):
+        quote = self._get_quote(obj)
+        return int(quote.item_price) if quote and quote.item_price is not None else None
+
+    def get_total_cost(self, obj):
+        quote = self._get_quote(obj)
+        return str(quote.total_cost) if quote and quote.total_cost is not None else None
+
+    def get_rfp_status(self, obj):
+        status_value = (obj.status or "").strip().lower()
+        if status_value == "active":
+            return "open"
+        return status_value or obj.status
+
+    def get_applied_status(self, obj):
+        return "applied" if self._get_quote(obj) else "open"
+
+
 class CreateRfpSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     item_name = serializers.CharField(max_length=255)

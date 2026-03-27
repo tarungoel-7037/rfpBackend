@@ -5,8 +5,8 @@ from rest_framework.views import APIView
 from rfpBackend.permissions import IsAdminRole, IsVendorRole
 
 from .constants import RFP_MESSAGES
-from .models import AccountsUserprofile, RfpRfp, RfpRfpVendors
-from .serializers import CreateRfpSerializer, RfpListSerializer, VendorByCategorySerializer
+from .models import AccountsUserprofile, RfpRfp, RfpRfpVendors, RfpRfpquote
+from .serializers import CreateRfpSerializer, RfpListSerializer, VendorByCategorySerializer, VendorRfpListSerializer
 
 
 class VendorsByCategoryView(APIView):
@@ -133,7 +133,16 @@ class VendorRfpListView(APIView):
         ).values_list("rfp_id", flat=True)
 
         rfps = RfpRfp.objects.filter(id__in=selected_rfp_ids).order_by("-id")
-        serializer = RfpListSerializer(rfps, many=True)
+        vendor_quotes = RfpRfpquote.objects.filter(vendor_id=vendor_id, rfp_id__in=selected_rfp_ids)
+        quote_map = {quote.rfp_id: quote for quote in vendor_quotes}
+        serializer = VendorRfpListSerializer(
+            rfps,
+            many=True,
+            context={
+                "vendor_id": vendor_id,
+                "quote_map": quote_map,
+            },
+        )
         return Response(
             {
                 "response": "success",

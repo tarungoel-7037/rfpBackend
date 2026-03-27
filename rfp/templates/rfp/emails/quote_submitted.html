@@ -1,0 +1,32 @@
+<html>
+<body>
+    <p>Hello {{ admin_name }},</p>
+    <p>A vendor has submitted a quote on your RFP.</p>
+    <table cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse;">
+        <tr>
+            <td><strong>Vendor Name</strong></td>
+            <td>{{ vendor_name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Vendor Email</strong></td>
+            <td>{{ vendor_email }}</td>
+        </tr>
+        <tr>
+            <td><strong>RFP No</strong></td>
+            <td>{{ rfp_no }}</td>
+        </tr>
+        <tr>
+            <td><strong>Product Name</strong></td>
+            <td>{{ item_name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Item Price</strong></td>
+            <td>{{ item_price }}</td>
+        </tr>
+        <tr>
+            <td><strong>Total Cost</strong></td>
+            <td>{{ total_cost }}</td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -6,7 +6,7 @@ from rfpBackend.permissions import IsAdminRole, IsVendorRole
 
 from .constants import RFP_MESSAGES
 from .models import AccountsUserprofile, RfpRfp, RfpRfpVendors, RfpRfpquote
-from .serializers import CreateRfpSerializer, RfpListSerializer, VendorByCategorySerializer, VendorRfpListSerializer
+from .serializers import CreateRfpSerializer, RfpListSerializer, SubmitQuoteSerializer, VendorByCategorySerializer, VendorRfpListSerializer
 
 
 class VendorsByCategoryView(APIView):
@@ -149,4 +149,74 @@ class VendorRfpListView(APIView):
                 "rfps": serializer.data,
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class SubmitQuoteView(APIView):
+    permission_classes = [IsVendorRole]
+
+    def post(self, request, rfp_id):
+        rfp = RfpRfp.objects.filter(id=rfp_id).first()
+        if not rfp:
+            return Response(
+                {
+                    "response": "error",
+                    "errors": RFP_MESSAGES["not_found"],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        payload = request.data.copy()
+        payload.pop("_method", None)
+
+        serializer = SubmitQuoteSerializer(
+            data=payload,
+            context={
+                "rfp": rfp,
+                "vendor_id": request.user.id,
+            },
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "response": "success",
+                    "message": RFP_MESSAGES["quote_submitted"],
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        error_text = serializer.errors.get("non_field_errors", [None])[0]
+        if error_text == RFP_MESSAGES["rfp_closed_for_quote"]:
+            return Response(
+                {
+                    "response": "error",
+                    "errors": RFP_MESSAGES["rfp_closed_for_quote"],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if error_text:
+            return Response(
+                {
+                    "response": "error",
+                    "errors": error_text,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        flat_errors = []
+        for field_errors in serializer.errors.values():
+            if isinstance(field_errors, list):
+                flat_errors.extend(str(error) for error in field_errors)
+            else:
+                flat_errors.append(str(field_errors))
+
+        return Response(
+            {
+                "response": "error",
+                "errors": flat_errors[0] if flat_errors else "Invalid data.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
         )

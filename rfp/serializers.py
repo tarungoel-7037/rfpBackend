@@ -1,8 +1,9 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import AccountsUserprofile, AuthUser, RfpCategory, RfpRfp, RfpRfpVendors
-from .utils import send_rfp_invitation_emails
+from .constants import RFP_MESSAGES
+from .models import AccountsUserprofile, AuthUser, RfpCategory, RfpRfp, RfpRfpVendors, RfpRfpquote
+from .utils import send_quote_submission_email, send_rfp_invitation_emails
 
 
 class VendorByCategorySerializer(serializers.Serializer):
@@ -200,3 +201,46 @@ class CreateRfpSerializer(serializers.Serializer):
         send_rfp_invitation_emails(rfp, vendor_ids)
 
         return rfp
+
+
+class SubmitQuoteSerializer(serializers.Serializer):
+    item_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_cost = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+    def validate(self, attrs):
+        rfp = self.context["rfp"]
+        vendor_id = self.context["vendor_id"]
+
+        if not RfpRfpVendors.objects.filter(rfp_id=rfp.id, user_id=vendor_id).exists():
+            raise serializers.ValidationError(RFP_MESSAGES["vendor_not_selected"])
+
+        status_value = (rfp.status or "").strip().lower()
+        if status_value == "closed":
+            raise serializers.ValidationError(RFP_MESSAGES["rfp_closed_for_quote"])
+
+        return attrs
+
+    def save(self, **kwargs):
+        rfp = self.context["rfp"]
+        vendor_id = self.context["vendor_id"]
+        now = timezone.now()
+        vendor = AuthUser.objects.get(id=vendor_id)
+
+        quote = RfpRfpquote.objects.filter(rfp_id=rfp.id, vendor_id=vendor_id).first()
+        if quote:
+            quote.item_price = self.validated_data["item_price"]
+            quote.total_cost = self.validated_data["total_cost"]
+            quote.created_at = now
+            quote.save(update_fields=["item_price", "total_cost", "created_at"])
+            send_quote_submission_email(rfp, vendor, quote)
+            return quote
+
+        quote = RfpRfpquote.objects.create(
+            rfp_id=rfp.id,
+            vendor_id=vendor_id,
+            item_price=self.validated_data["item_price"],
+            total_cost=self.validated_data["total_cost"],
+            created_at=now,
+        )
+        send_quote_submission_email(rfp, vendor, quote)
+        return quote

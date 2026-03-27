@@ -6,7 +6,7 @@ from rfpBackend.permissions import IsAdminRole, IsVendorRole
 
 from .constants import RFP_MESSAGES
 from .models import AccountsUserprofile, RfpRfp, RfpRfpVendors, RfpRfpquote
-from .serializers import CreateRfpSerializer, RfpListSerializer, SubmitQuoteSerializer, VendorByCategorySerializer, VendorRfpListSerializer
+from .serializers import CreateRfpSerializer, QuoteDetailSerializer, RfpListSerializer, SubmitQuoteSerializer, VendorByCategorySerializer, VendorRfpListSerializer
 
 
 class VendorsByCategoryView(APIView):
@@ -219,4 +219,32 @@ class SubmitQuoteView(APIView):
                 "errors": flat_errors[0] if flat_errors else "Invalid data.",
             },
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class QuoteDetailView(APIView):
+    permission_classes = [IsVendorRole]
+
+    def get(self, request, rfp_id):
+        quote = RfpRfpquote.objects.filter(
+            rfp_id=rfp_id,
+            vendor_id=request.user.id,
+        ).select_related("vendor").first()
+
+        if not quote:
+            return Response(
+                {
+                    "response": "error",
+                    "message": RFP_MESSAGES["quote_not_found"],
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = QuoteDetailSerializer(quote)
+        return Response(
+            {
+                "response": "success",
+                "quote": serializer.data,
+            },
+            status=status.HTTP_200_OK,
         )

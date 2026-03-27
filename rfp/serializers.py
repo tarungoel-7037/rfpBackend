@@ -116,6 +116,24 @@ class VendorRfpListSerializer(serializers.Serializer):
         return "applied" if self._get_quote(obj) else "open"
 
 
+class QuoteDetailSerializer(serializers.Serializer):
+    name = serializers.SerializerMethodField()
+    rfp_id = serializers.IntegerField()
+    item_price = serializers.SerializerMethodField()
+    total_cost = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        first_name = (obj.vendor.first_name or "").strip()
+        last_name = (obj.vendor.last_name or "").strip()
+        return f"{first_name} {last_name}".strip()
+
+    def get_item_price(self, obj):
+        return int(obj.item_price) if obj.item_price is not None else None
+
+    def get_total_cost(self, obj):
+        return int(obj.total_cost) if obj.total_cost is not None else None
+
+
 class CreateRfpSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     item_name = serializers.CharField(max_length=255)

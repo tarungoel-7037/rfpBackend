@@ -1,0 +1,32 @@
+<html>
+<body>
+    <p>Hello {{ vendor_name }},</p>
+    <p><strong>RFP invitation.</strong></p>
+    <table cellpadding="6" cellspacing="0" border="1" style="border-collapse: collapse;">
+        <tr>
+            <td><strong>Product Name</strong></td>
+            <td>{{ item_name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Product description</strong></td>
+            <td>{{ item_description }}</td>
+        </tr>
+        <tr>
+            <td><strong>Quantity</strong></td>
+            <td>{{ quantity }}</td>
+        </tr>
+        <tr>
+            <td><strong>Minimum price</strong></td>
+            <td>{{ minimum_price }}</td>
+        </tr>
+        <tr>
+            <td><strong>Maximum price</strong></td>
+            <td>{{ maximum_price }}</td>
+        </tr>
+        <tr>
+            <td><strong>Last Date</strong></td>
+            <td>{{ last_date }}</td>
+        </tr>
+    </table>
+</body>
+</html>

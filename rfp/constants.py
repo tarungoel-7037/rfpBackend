@@ -7,3 +7,7 @@ RFP_MESSAGES = {
     "already_closed": "RFP is already closed",
     "not_found": "RFP not found",
 }
+
+RFP_EMAIL_SUBJECTS = {
+    "invitation": "RFP invitation",
+}

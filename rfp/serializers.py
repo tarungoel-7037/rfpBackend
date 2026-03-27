@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import AccountsUserprofile, AuthUser, RfpCategory, RfpRfp, RfpRfpVendors
+from .utils import send_rfp_invitation_emails
 
 
 class VendorByCategorySerializer(serializers.Serializer):
@@ -136,5 +137,6 @@ class CreateRfpSerializer(serializers.Serializer):
             for vendor_id in vendor_ids
         ]
         RfpRfpVendors.objects.bulk_create(rfp_vendor_links)
+        send_rfp_invitation_emails(rfp, vendor_ids)
 
         return rfp

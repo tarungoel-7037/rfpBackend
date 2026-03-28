@@ -8,6 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .constants import ERROR_MESSAGES, SUCCESS_MESSAGES
 from .serializers import (
     AdminSignupSerializer,
+    ConfirmOtpResetPasswordSerializer,
+    ForgotPasswordSerializer,
     LoginSerializer,
     VendorListSerializer,
     VendorSignupSerializer,
@@ -194,4 +196,56 @@ class ApproveVendorView(APIView):
                 "message": success_message,
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "response": "success",
+                    "message": SUCCESS_MESSAGES["otp_sent"],
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        error_text = serializer.errors.get("email", [None])[0]
+        return Response(
+            {
+                "response": "error",
+                "message": error_text or ERROR_MESSAGES["email_not_found"],
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class ConfirmOtpResetPasswordView(APIView):
+    def post(self, request):
+        serializer = ConfirmOtpResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "response": "success",
+                    "message": SUCCESS_MESSAGES["password_reset"],
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        error_text = serializer.errors.get("non_field_errors", [None])[0]
+        if not error_text:
+            for field_errors in serializer.errors.values():
+                if isinstance(field_errors, list) and field_errors:
+                    error_text = str(field_errors[0])
+                    break
+
+        return Response(
+            {
+                "response": "error",
+                "message": error_text or "Invalid data.",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
         )

@@ -3,6 +3,8 @@ from django.urls import path
 from .views import (
     AdminSignupView,
     ApproveVendorView,
+    ConfirmOtpResetPasswordView,
+    ForgotPasswordView,
     LoginView,
     VendorListView,
     VendorSignupView,
@@ -10,6 +12,8 @@ from .views import (
 
 
 urlpatterns = [
+    path("forgetPassword/", ForgotPasswordView.as_view(), name="forgot-password"),
+    path("confirmotpresetPassword/", ConfirmOtpResetPasswordView.as_view(), name="confirm-otp-reset-password"),
     path("registeradmin/", AdminSignupView.as_view(), name="admin-signup"),
     path("registervendor/", VendorSignupView.as_view(), name="vendor-signup"),
     path("login/", LoginView.as_view(), name="login"),

@@ -12,6 +12,9 @@ ERROR_MESSAGES = {
     "invalid_vendor_status": "Status should be approved or pending",
     "already_approved": "Already Approved",
     "already_pending": "Already Pending",
+    "email_not_found": "Email not found",
+    "otp_invalid": "Invalid OTP",
+    "otp_expired": "OTP has expired",
 }
 
 SUCCESS_MESSAGES = {
@@ -21,9 +24,12 @@ SUCCESS_MESSAGES = {
     "vendors": "Vendors fetched successfully",
     "vendor_approved": "Vendor Approved Successfully",
     "vendor_disapproved": "Vendor Moved To Pending Successfully",
+    "otp_sent": "OTP sent successfully",
+    "password_reset": "Password changed successfully",
 }
 
 EMAIL_SUBJECTS = {
     "admin_signup": "Admin Registration Successful",
     "vendor_signup": "Vendor Registration Successful",
+    "password_reset_otp": "Password Reset OTP",
 }

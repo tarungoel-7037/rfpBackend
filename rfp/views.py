@@ -223,12 +223,53 @@ class SubmitQuoteView(APIView):
 
 
 class QuoteDetailView(APIView):
-    permission_classes = [IsVendorRole]
-
     def get(self, request, rfp_id):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return Response(
+                {
+                    "response": "error",
+                    "message": "Authentication credentials were not provided.",
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        profile = AccountsUserprofile.objects.filter(user_id=user.id).first()
+        is_admin = bool(user.is_staff or user.is_superuser or (profile and profile.role == "admin"))
+        is_vendor = bool(profile and profile.role == "vendor")
+
+        if not is_admin and not is_vendor:
+            return Response(
+                {
+                    "response": "error",
+                    "message": "You are not authorized to view quotes for this RFP.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if is_admin:
+            quotes = RfpRfpquote.objects.filter(rfp_id=rfp_id).select_related("vendor").order_by("-id")
+            if not quotes:
+                return Response(
+                    {
+                        "response": "error",
+                        "message": RFP_MESSAGES["quote_not_found"],
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            serializer = QuoteDetailSerializer(quotes, many=True)
+            return Response(
+                {
+                    "response": "success",
+                    "quotes": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
         quote = RfpRfpquote.objects.filter(
             rfp_id=rfp_id,
-            vendor_id=request.user.id,
+            vendor_id=user.id,
         ).select_related("vendor").first()
 
         if not quote:

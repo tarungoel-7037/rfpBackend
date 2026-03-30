@@ -253,9 +253,9 @@ class QuoteDetailView(APIView):
                 return Response(
                     {
                         "response": "error",
-                        "message": RFP_MESSAGES["quote_not_found"],
+                        "error": RFP_MESSAGES["quote_not_found"],
                     },
-                    status=status.HTTP_404_NOT_FOUND,
+                    status=status.HTTP_200_OK,
                 )
 
             serializer = QuoteDetailSerializer(quotes, many=True)
@@ -276,9 +276,9 @@ class QuoteDetailView(APIView):
             return Response(
                 {
                     "response": "error",
-                    "message": RFP_MESSAGES["quote_not_found"],
+                    "error": RFP_MESSAGES["quote_not_found"],
                 },
-                status=status.HTTP_404_NOT_FOUND,
+                status=status.HTTP_200_OK,
             )
 
         serializer = QuoteDetailSerializer(quote)

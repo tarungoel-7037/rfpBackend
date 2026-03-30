@@ -9,7 +9,7 @@ RFP_MESSAGES = {
     "quote_submitted": "Quote submitted successfully",
     "rfp_closed_for_quote": "RFP is closed.",
     "vendor_not_selected": "Vendor is not selected for this RFP.",
-    "quote_not_found": "Quote not found.",
+    "quote_not_found": "No quotes available",
 }
 
 RFP_EMAIL_SUBJECTS = {

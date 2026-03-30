@@ -9,7 +9,7 @@ ERROR_MESSAGES = {
     "token_user_not_found": "Token user could not be created",
     "vendor_not_found": "Vendor not found",
     "approve_payload_required": "user_id and status are required",
-    "invalid_vendor_status": "Status should be approved or pending",
+    "invalid_vendor_status": "Status should be approved, pending, or disapproved",
     "already_approved": "Already Approved",
     "already_pending": "Already Pending",
     "email_not_found": "Email not found",

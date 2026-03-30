@@ -19,4 +19,5 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("vendorlist/", VendorListView.as_view(), name="vendor-list"),
     path("approveVendor/", ApproveVendorView.as_view(), name="approve-vendor"),
+    path("vendors/<int:user_id>/disapprove/", ApproveVendorView.as_view(), {"action": "disapprove"}, name="disapprove-vendor-by-id"),
 ]

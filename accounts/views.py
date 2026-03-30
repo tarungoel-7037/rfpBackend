@@ -124,9 +124,14 @@ class VendorListView(APIView):
 class ApproveVendorView(APIView):
     permission_classes = [IsAdminRole]
 
-    def post(self, request):
-        user_id = request.data.get("user_id")
+    def post(self, request, user_id=None, action=None):
+        user_id = user_id or request.data.get("user_id")
         status_value = str(request.data.get("status", "")).strip().lower()
+
+        if action == "approve":
+            status_value = "approved"
+        elif action == "disapprove":
+            status_value = "pending"
 
         if not user_id or not status_value:
             return Response(
@@ -137,7 +142,7 @@ class ApproveVendorView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if status_value not in ["approved", "pending"]:
+        if status_value not in ["approved", "pending", "disapproved"]:
             return Response(
                 {
                     "response": "Error",
@@ -145,6 +150,9 @@ class ApproveVendorView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        if status_value == "disapproved":
+            status_value = "pending"
 
         vendor = AccountsUserprofile.objects.filter(
             user_id=user_id,
